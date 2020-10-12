@@ -428,3 +428,45 @@ server {
 
 	{{ end }}
 {{ end }}
+
+{{ range $virtualUpstream, $containers := groupByMulti $ "Env.VIRTUAL_UPSTREAM" "," }}
+
+	{{ $virtualUpstream := split $virtualUpstream "|" }}
+	{{ $upstream_name := trim (index $virtualUpstream 0) }}
+
+	{{/* set the default port */}}
+	{{ $virtualPort := "80" }}
+
+	{{/* parse the VIRTUAL_UPSTREAM for ports */}}
+	{{ if eq (len $virtualUpstream) 2 }}
+		{{$virtualPort = index $virtualUpstream 1}}
+	{{ end }}
+
+# {{ $virtualPort }}
+upstream {{ $upstream_name }} {
+
+	{{ range $container := $containers }}
+		{{ $addrLen := len $container.Addresses }}
+		{{ range $knownNetwork := $CurrentContainer.Networks }}
+			{{ range $containerNetwork := $container.Networks }}
+				{{ if (and (ne $containerNetwork.Name "ingress") (or (eq $knownNetwork.Name $containerNetwork.Name) (eq $knownNetwork.Name "host"))) }}
+	## Can be connected with "{{ $containerNetwork.Name }}" network
+
+					{{/* If only 1 port exposed, use that */}}
+					{{ if eq $addrLen 1 }}
+						{{ $address := index $container.Addresses 0 }}
+						{{ template "upstream" (dict "Container" $container "Address" $address "Network" $containerNetwork) }}
+					{{/* If more than one port exposed, use the one matching $virtualPort */}}
+					{{ else }}
+						{{ $address := where $container.Addresses "Port" $virtualPort | first }}
+						{{ template "upstream" (dict "Container" $container "Address" $address "Network" $containerNetwork) }}
+					{{ end }}
+				{{ else }}
+	# Cannot be connected with "{{ $containerNetwork.Name }}" network
+	server 127.0.0.1 down;
+				{{ end }}
+			{{ end }}
+		{{ end }}
+	{{ end }}
+}
+{{ end }}
