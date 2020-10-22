@@ -351,9 +351,9 @@ server {
 		proxy_pass {{ trim $virtualProto }}://{{ trim $upstream_name }};
 				{{ end }}
 
-				{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
+				{{ if (exists (printf "/etc/nginx/htpasswd/%s-%s" $hostHttpsPort $host)) }}
 		auth_basic	"Restricted {{ $host }}";
-		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s" $host) }};
+		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s-%s" $hostHttpsPort $host) }};
 				{{ end }}
 				{{ if (exists (printf "/etc/nginx/vhost.d/%s_location" $host)) }}
 		include {{ printf "/etc/nginx/vhost.d/%s_location" $host}};
@@ -399,9 +399,9 @@ server {
 				{{ else }}
 		proxy_pass {{ trim $virtualProto }}://{{ trim $upstream_name }};
 				{{ end }}
-				{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
+				{{ if (exists (printf "/etc/nginx/htpasswd/%s-%s" $hostHttpsPort $host)) }}
 		auth_basic	"Restricted {{ $host }}";
-		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s" $host) }};
+		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s-%s" $hostHttpsPort $host) }};
 				{{ end }}
 				{{ if (exists (printf "/etc/nginx/vhost.d/%s_location" $host)) }}
 		include {{ printf "/etc/nginx/vhost.d/%s_location" $host}};
